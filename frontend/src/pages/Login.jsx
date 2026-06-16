@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { getSetupStatus, login } from '../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -7,7 +8,32 @@ const Login = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if owner is already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard');
+      return;
+    }
+
+    const checkSetup = async () => {
+      try {
+        const response = await getSetupStatus();
+        if (response.setupRequired) {
+          navigate('/register');
+        }
+      } catch (err) {
+        console.error('Error checking setup status:', err);
+      } finally {
+        setCheckingSetup(false);
+      }
+    };
+    checkSetup();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -17,19 +43,35 @@ const Login = () => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Simple validation (in real app, this would be an API call)
     if (!formData.username || !formData.password) {
       setError('Please fill in all fields');
       return;
     }
 
-    // For demo purposes, accept any login
-    // In production, this would verify credentials with backend
-    navigate('/dashboard');
+    setLoading(true);
+    try {
+      await login(formData.username, formData.password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Invalid username or password');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (checkingSetup) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="inline-block animate-spin text-3xl mb-4">⏳</div>
+          <p className="text-sm font-medium">Checking setup status...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center p-4">
@@ -61,6 +103,7 @@ const Login = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter your username"
               autoComplete="username"
@@ -77,6 +120,7 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter your password"
               autoComplete="current-password"
@@ -85,28 +129,23 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all font-medium"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all font-medium disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Sign In
+            {loading ? (
+              <>
+                <span className="animate-spin inline-block">⏳</span>
+                <span>Signing In...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
 
-        {/* Register Link */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              Create one
-            </Link>
-          </p>
-        </div>
-
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>© 2024 Venkateshwar Kiranam. All rights reserved.</p>
+          <p>© 2026 Venkateshwar Kiranam. All rights reserved.</p>
         </div>
       </div>
     </div>

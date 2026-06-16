@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { getProfile, logout } from '../services/api';
 
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,19 +24,15 @@ const MainLayout = () => {
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userSettings');
-    // Redirect to login
+    logout();
     navigate('/');
   };
 
-  const getUserInfo = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
+  const getOwnerInfo = () => {
+    const ownerData = localStorage.getItem('owner');
+    if (ownerData) {
       try {
-        return JSON.parse(user);
+        return JSON.parse(ownerData);
       } catch (err) {
         return null;
       }
@@ -43,7 +40,28 @@ const MainLayout = () => {
     return null;
   };
 
-  const user = getUserInfo() || { username: 'Shop Manager' };
+  const [owner, setOwner] = useState(getOwnerInfo() || {
+    full_name: 'Shop Owner',
+    shop_name: 'Venkateshwar Kiranam',
+    email: 'owner@shop.com',
+    phone: '',
+    profile_image: null
+  });
+
+  useEffect(() => {
+    const fetchFreshProfile = async () => {
+      try {
+        const response = await getProfile();
+        if (response.success && response.owner) {
+          setOwner(response.owner);
+          localStorage.setItem('owner', JSON.stringify(response.owner));
+        }
+      } catch (err) {
+        console.error('Error fetching owner profile in MainLayout:', err);
+      }
+    };
+    fetchFreshProfile();
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -65,8 +83,7 @@ const MainLayout = () => {
           {/* Logo */}
           <div className="flex items-center justify-center h-20 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-800">
             <div className="text-center">
-              <h1 className="text-lg font-bold text-white">🏪 Venkateshwar</h1>
-              <p className="text-xs text-blue-100">Kiranam</p>
+              <h1 className="text-lg font-bold text-white">🏪 {owner.shop_name}</h1>
             </div>
           </div>
 
@@ -124,17 +141,22 @@ const MainLayout = () => {
               <div className="relative">
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold hover:bg-blue-700 transition-colors cursor-pointer overflow-hidden border border-gray-200 shadow-sm"
                 >
-                  {user.username.charAt(0).toUpperCase()}
+                  {owner.profile_image ? (
+                    <img src={owner.profile_image} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    owner.full_name.charAt(0).toUpperCase()
+                  )}
                 </button>
 
                 {/* Profile Dropdown Menu */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{user.username}</p>
-                      <p className="text-xs text-gray-600">{user.email || 'manager@shop.com'}</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{owner.full_name}</p>
+                      <p className="text-xs text-gray-600 dark:text-slate-400">{owner.shop_name}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">{owner.email}</p>
                     </div>
                     <Link
                       to="/dashboard/profile"
