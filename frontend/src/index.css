@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+/* ================= DARK THEME OVERRIDES ================= */
+
+.dark body, 
+.dark .min-h-screen,
+.dark main {
+  background-color: #0f172a !important; /* Slate 900 */
+  color: #f1f5f9 !important; /* Slate 100 */
+}
+
+/* Background & card overrides */
+.dark aside,
+.dark header,
+.dark nav,
+.dark .bg-white,
+.dark .bg-white\/80 {
+  background-color: #1e293b !important; /* Slate 800 */
+  color: #f1f5f9 !important;
+  border-color: #334155 !important; /* Slate 700 */
+}
+
+/* Typography contrast overrides */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-950,
+.dark .text-gray-700 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: #94a3b8 !important; /* Slate 400 */
+}
+
+/* Borders & grids */
+.dark .border,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #334155 !important;
+}
+
+.dark .divide-y > * + *,
+.dark .divide-gray-100 > * + * {
+  border-color: #334155 !important;
+}
+
+.dark .border-dashed {
+  border-color: #475569 !important;
+}
+
+.dark .border-dashed:hover {
+  border-color: #3b82f6 !important;
+}
+
+/* Forms & Selects */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Table Hover States & secondary regions */
+.dark .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+.dark thead {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+/* Notification & Stat Panel color adjustments */
+.dark .bg-blue-50 {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+  color: #60a5fa !important;
+}
+
+.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: #c084fc !important;
+}
+
+.dark .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+}
+
+/* Adjust Toast and popups */
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
+}
