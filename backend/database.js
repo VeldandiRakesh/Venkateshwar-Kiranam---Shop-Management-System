@@ -30,6 +30,28 @@ function initializeDatabase() {
     }
   );
 
+  // Create owner table if it doesn't exist
+  db.run(
+    `CREATE TABLE IF NOT EXISTS owner (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      shop_name TEXT NOT NULL,
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      profile_image TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+      if (err) {
+        console.error('Error creating owner table:', err);
+      } else {
+        console.log('✓ Owner table ready');
+      }
+    }
+  );
+
   // Create products table if it doesn't exist
   db.run(
     `CREATE TABLE IF NOT EXISTS products (

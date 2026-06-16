@@ -117,3 +117,56 @@
 .dark .shadow-2xl {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
 }
+
+/* Custom theme variables and Tailwind variant styling */
+@variant dark (&:where(.dark, .dark *));
+
+/* Text color contrast enhancements */
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+.dark .text-green-600 {
+  color: #34d399 !important;
+}
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+.dark .text-purple-600 {
+  color: #c084fc !important;
+}
+.dark .text-yellow-600 {
+  color: #fbbf24 !important;
+}
+
+/* Background elements */
+.dark .bg-gray-100 {
+  background-color: #0f172a !important; /* Slate 900 */
+}
+.dark .bg-gray-200 {
+  background-color: #1e293b !important; /* Slate 800 */
+}
+
+/* Hover & active states */
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-200:hover,
+.dark .hover\:bg-gray-50:hover {
+  background-color: #334155 !important; /* Slate 700 */
+}
+
+/* Modals & Dialog overlays */
+.dark .bg-black.bg-opacity-50 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Fix sidebar sub-links and elements */
+.dark aside Link:hover,
+.dark aside a:hover,
+.dark a.hover\:bg-gray-100:hover {
+  background-color: #334155 !important;
+}
+
+/* Custom cards and inputs border and outline color adjustments */
+.dark select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}

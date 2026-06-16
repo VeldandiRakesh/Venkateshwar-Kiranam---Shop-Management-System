@@ -130,19 +130,47 @@ export const calculatePrice = async (productName, quantity, unit) => {
   }
 };
 
-// ============ AUTH ENDPOINTS ============
+// ============ OWNER AUTH ENDPOINTS ============
 
 /**
- * Login user
+ * Get setup status (check if owner account exists)
+ * @returns {Promise} Setup status data
+ */
+export const getSetupStatus = async () => {
+  try {
+    const response = await API.get('/auth/setup-status');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error checking setup status' };
+  }
+};
+
+/**
+ * Register owner account
+ * @param {Object} ownerData - Name, Shop Name, Username, Email, Phone, Password
+ * @returns {Promise} Confirmation details
+ */
+export const registerOwner = async (ownerData) => {
+  try {
+    const response = await API.post('/auth/register', ownerData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error registering owner account' };
+  }
+};
+
+/**
+ * Login owner
  * @param {string} username - Username
  * @param {string} password - Password
- * @returns {Promise} JWT token and user data
+ * @returns {Promise} JWT token and owner data
  */
 export const login = async (username, password) => {
   try {
     const response = await API.post('/auth/login', { username, password });
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('owner', JSON.stringify(response.data.owner));
     }
     return response.data;
   } catch (error) {
@@ -151,19 +179,56 @@ export const login = async (username, password) => {
 };
 
 /**
- * Logout user
+ * Logout owner
  */
 export const logout = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('owner');
+  localStorage.removeItem('userSettings');
 };
 
 /**
- * Get current user
- * @returns {Promise} User data
+ * Fetch owner profile
+ * @returns {Promise} Owner profile data
  */
-export const getCurrentUser = () => {
-  const token = localStorage.getItem('token');
-  return token ? { authenticated: true } : { authenticated: false };
+export const getProfile = async () => {
+  try {
+    const response = await API.get('/auth/profile');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error fetching profile' };
+  }
+};
+
+/**
+ * Update owner profile
+ * @param {Object} profileData - full_name, shop_name, email, phone, profile_image
+ * @returns {Promise} Updated owner profile data
+ */
+export const updateProfile = async (profileData) => {
+  try {
+    const response = await API.put('/auth/profile', profileData);
+    if (response.data.owner) {
+      localStorage.setItem('owner', JSON.stringify(response.data.owner));
+    }
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error updating profile' };
+  }
+};
+
+/**
+ * Change owner password
+ * @param {Object} passwordData - currentPassword, newPassword
+ * @returns {Promise} Confirmation details
+ */
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await API.put('/auth/profile/password', passwordData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error changing password' };
+  }
 };
 
 // ============ SALES ENDPOINTS ============
@@ -195,6 +260,23 @@ export const createSale = async (saleData) => {
     throw error.response?.data || { message: 'Error recording sale' };
   }
 };
+
+/**
+ * Download sale PDF invoice
+ * @param {number} saleId - Sale ID
+ * @returns {Promise} PDF blob
+ */
+export const downloadSalePDF = async (saleId) => {
+  try {
+    const response = await API.get(`/sales/${saleId}/pdf`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Error downloading PDF' };
+  }
+};
+
 
 /**
  * Get sales statistics for dashboard

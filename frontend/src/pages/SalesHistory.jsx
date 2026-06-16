@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSales } from '../services/api';
-import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { getSales, downloadSalePDF } from '../services/api';
 import { useProducts } from '../contexts/ProductContext';
 
 const SalesHistory = () => {
@@ -41,27 +40,21 @@ const SalesHistory = () => {
     }
   };
 
-  const handleDownloadPDF = (sale) => {
+  const handleDownloadPDF = async (sale) => {
     try {
-      const subtotal = sale.subtotal;
-      const cgst = sale.tax / 2;
-      const sgst = sale.tax / 2;
-      const totalAmount = sale.total_amount;
-      const dateFormatted = new Date(sale.created_at).toLocaleString('en-IN');
-
-      generateInvoicePDF(
-        sale.id,
-        sale.customer_name,
-        sale.items,
-        subtotal,
-        cgst,
-        sgst,
-        totalAmount,
-        dateFormatted
-      );
+      const blob = await downloadSalePDF(sale.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const customerName = sale.customer_name ? sale.customer_name.replace(/\s+/g, '_') : 'Guest';
+      link.setAttribute('download', `Bill_${sale.id}_${customerName}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       addToast(`Downloaded Invoice #${sale.id} PDF`, 'success');
     } catch (err) {
-      console.error('PDF generation error:', err);
+      console.error('PDF download error:', err);
       addToast('Failed to download invoice PDF', 'error');
     }
   };

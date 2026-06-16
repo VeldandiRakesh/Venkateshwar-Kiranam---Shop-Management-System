@@ -14,4 +14,7 @@ router.get('/stats', salesController.getStats);
 // Get daily/monthly/profit/low stock reports
 router.get('/reports', salesController.getReports);
 
+// Get sales invoice PDF
+router.get('/:id/pdf', salesController.downloadSalePDF);
+
 module.exports = router;

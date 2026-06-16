@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
 const Settings = () => {
@@ -34,6 +34,17 @@ const Settings = () => {
       }
     };
   });
+
+  // Keep settings theme in sync with the active theme context (e.g. if toggled from the user profile menu)
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        theme: activeTheme
+      }
+    }));
+  }, [activeTheme]);
 
   const handleNotificationChange = (key) => {
     setSettings(prev => ({
@@ -154,17 +165,43 @@ const Settings = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Theme
+              Theme Mode
             </label>
-            <select
-              value={settings.preferences.theme}
-              onChange={(e) => handlePreferenceChange('theme', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="auto">Auto</option>
-            </select>
+            <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-lg border border-gray-200 dark:border-slate-700 space-x-1">
+              <button
+                type="button"
+                onClick={() => handlePreferenceChange('theme', 'light')}
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                  settings.preferences.theme === 'light'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-800'
+                }`}
+              >
+                ☀️ Light
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePreferenceChange('theme', 'dark')}
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                  settings.preferences.theme === 'dark'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-800'
+                }`}
+              >
+                🌙 Dark
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePreferenceChange('theme', 'auto')}
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                  settings.preferences.theme === 'auto'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-800'
+                }`}
+              >
+                💻 Auto
+              </button>
+            </div>
           </div>
 
           <div>

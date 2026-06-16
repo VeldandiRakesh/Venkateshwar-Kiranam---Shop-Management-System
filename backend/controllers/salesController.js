@@ -278,3 +278,123 @@ exports.getReports = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error generating report analysis', error: error.message });
   }
 };
+
+/**
+ * Generate and download a PDF invoice for a sale (Zero-dependency custom PDF writer).
+ */
+exports.downloadSalePDF = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sale = await get('SELECT * FROM sales WHERE id = ?', [id]);
+    if (!sale) {
+      return res.status(404).json({ success: false, message: 'Sale invoice not found' });
+    }
+
+    const items = JSON.parse(sale.items);
+    const dateStr = new Date(sale.created_at).toLocaleString('en-IN');
+    const customerName = sale.customer_name || 'Guest';
+    const totalAmount = sale.total_amount.toFixed(2);
+
+    // Build PDF content stream
+    let streamContent = '';
+    
+    // Header Info
+    streamContent += 'BT\n/F1 22 Tf\n50 780 Td\n(Venkateshwar Kiranam) Tj\nET\n';
+    streamContent += 'BT\n/F1 10 Tf\n50 760 Td\n(Venkateshwar Nagar, Hyderabad, Telangana, 500098) Tj\nET\n';
+    
+    // Divider
+    streamContent += '0.5 w\n50 745 m\n545 745 l\nS\n';
+    
+    // Metadata
+    streamContent += `BT\n/F1 11 Tf\n50 720 Td\n(Bill ID: #${sale.id}) Tj\nET\n`;
+    streamContent += `BT\n/F1 11 Tf\n50 700 Td\n(Customer Name: ${customerName}) Tj\nET\n`;
+    streamContent += `BT\n/F1 11 Tf\n50 680 Td\n(Date: ${dateStr}) Tj\nET\n`;
+    
+    // Table Header
+    streamContent += 'BT\n/F1 11 Tf\n50 640 Td\n(Product Name) Tj\n250 0 Td\n(Qty) Tj\n100 0 Td\n(Price) Tj\n80 0 Td\n(Total) Tj\nET\n';
+    streamContent += '0.2 w\n50 630 m\n545 630 l\nS\n';
+    
+    // Table Items
+    let y = 610;
+    items.forEach(item => {
+      const price = item.price !== undefined ? item.price : item.selling_price;
+      const qty = item.quantity;
+      const itemTotal = (price * qty).toFixed(2);
+      
+      // Clean names of parentheses for valid PDF syntax
+      const cleanName = item.name.replace(/[()]/g, '');
+      const cleanUnit = (item.unit || 'units').replace(/[()]/g, '');
+      
+      streamContent += `BT\n/F1 10 Tf\n50 ${y} Td\n(${cleanName}) Tj\n250 0 Td\n(${qty} ${cleanUnit}) Tj\n100 0 Td\n(Rs. ${price.toFixed(2)}) Tj\n80 0 Td\n(Rs. ${itemTotal}) Tj\nET\n`;
+      y -= 20;
+    });
+    
+    // Divider
+    streamContent += `0.2 w\n50 ${y + 5} m\n545 ${y + 5} l\nS\n`;
+    
+    // Grand Total
+    streamContent += `BT\n/F1 12 Tf\n400 ${y - 15} Td\n(Grand Total: Rs. ${totalAmount}) Tj\nET\n`;
+    
+    // Footer
+    streamContent += 'BT\n/F1 10 Tf\n200 50 Td\n(Thank you for shopping with us! Please visit again.) Tj\nET\n';
+
+    const streamLength = Buffer.byteLength(streamContent, 'utf8');
+    
+    // Assemble PDF structural components and compute cross-reference byte offsets
+    const objects = [];
+    let currentOffset = 0;
+    
+    const header = '%PDF-1.4\n';
+    currentOffset += header.length;
+    
+    const obj1 = '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+    objects.push({ id: 1, content: obj1, offset: currentOffset });
+    currentOffset += obj1.length;
+    
+    const obj2 = '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+    objects.push({ id: 2, content: obj2, offset: currentOffset });
+    currentOffset += obj2.length;
+    
+    const obj3 = '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n';
+    objects.push({ id: 3, content: obj3, offset: currentOffset });
+    currentOffset += obj3.length;
+    
+    const obj4 = '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
+    objects.push({ id: 4, content: obj4, offset: currentOffset });
+    currentOffset += obj4.length;
+    
+    const obj5Header = `5 0 obj\n<< /Length ${streamLength} >>\nstream\n`;
+    const obj5Footer = '\nendstream\nendobj\n';
+    const obj5Content = obj5Header + streamContent + obj5Footer;
+    objects.push({ id: 5, content: obj5Content, offset: currentOffset });
+    currentOffset += Buffer.byteLength(obj5Content, 'utf8');
+    
+    // Xref
+    let xref = 'xref\n0 6\n0000000000 65535 f \n';
+    objects.forEach(obj => {
+      const paddedOffset = String(obj.offset).padStart(10, '0');
+      xref += `${paddedOffset} 00000 n \n`;
+    });
+    
+    const startxref = currentOffset;
+    const trailer = `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${startxref}\n%%EOF\n`;
+    
+    const fullPdfParts = [];
+    fullPdfParts.push(Buffer.from(header, 'utf8'));
+    objects.forEach(obj => {
+      fullPdfParts.push(Buffer.from(obj.content, 'utf8'));
+    });
+    fullPdfParts.push(Buffer.from(xref, 'utf8'));
+    fullPdfParts.push(Buffer.from(trailer, 'utf8'));
+    
+    const finalBuffer = Buffer.concat(fullPdfParts);
+    
+    // Set headers and return PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Bill_${id}_${customerName.replace(/\s+/g, '_')}.pdf"`);
+    res.status(200).send(finalBuffer);
+  } catch (error) {
+    console.error('PDF generation endpoint failed:', error);
+    res.status(500).json({ success: false, message: 'PDF invoice generation failed', error: error.message });
+  }
+};

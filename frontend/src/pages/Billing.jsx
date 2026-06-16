@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useProducts } from '../contexts/ProductContext';
-import { createSale } from '../services/api';
-import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { createSale, downloadSalePDF } from '../services/api';
 
 const Billing = () => {
   const { products, loading, error, fetchProducts, addToast } = useProducts();
@@ -119,9 +118,23 @@ const Billing = () => {
       if (response.success) {
         addToast('Invoice generated and saved successfully!', 'success');
         
-        // 2. Download invoice PDF locally
-        const billId = response.data.bill_id;
-        generateInvoicePDF(billId, saleData.customer_name, cart, subtotal, cgst, sgst, totalAmount, timestamp);
+        // 2. Download invoice PDF from backend
+        try {
+          const billId = response.data.bill_id;
+          const blob = await downloadSalePDF(billId);
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          const cleanCustName = saleData.customer_name ? saleData.customer_name.replace(/\s+/g, '_') : 'Guest';
+          link.setAttribute('download', `Bill_${billId}_${cleanCustName}.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (pdfErr) {
+          console.error('Failed to download PDF:', pdfErr);
+          addToast('Bill saved but PDF download failed.', 'warning');
+        }
 
         // 3. Clear cart and refresh product list to sync new stock
         setCart([]);
