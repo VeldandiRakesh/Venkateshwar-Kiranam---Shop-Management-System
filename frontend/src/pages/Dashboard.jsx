@@ -18,13 +18,31 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await getSalesStats();
-      setStats(response.data);
+
+      // Backend response:
+      // {
+      //   success: true,
+      //   data: { ...stats }
+      // }
+
+      if (response.success) {
+        setStats(response.data);
+      } else {
+        setError("Failed to load dashboard statistics");
+      }
     } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
-      setError(err.message || 'Failed to load dashboard statistics');
+      console.error("Error fetching dashboard stats:", err);
+
+      setError(
+        err.message ||
+        err.response?.data?.message ||
+        "Failed to load dashboard statistics"
+      );
+
       if (addToast) {
-        addToast('Error loading stats', 'error');
+        addToast("Error loading stats", "error");
       }
     } finally {
       setLoading(false);
