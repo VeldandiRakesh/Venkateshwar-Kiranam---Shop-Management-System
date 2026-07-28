@@ -8,34 +8,6 @@ const API = axios.create({
   },
 });
 
-// Add request interceptor
-API.interceptors.request.use(
-  (config) => {
-    // Add token if available
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor
-API.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
-      window.location.href = '/';
-    }
-    return Promise.reject(error);
-  }
-);
-
 // ============ PRODUCT ENDPOINTS ============
 
 /**
@@ -130,62 +102,7 @@ export const calculatePrice = async (productName, quantity, unit) => {
   }
 };
 
-// ============ OWNER AUTH ENDPOINTS ============
-
-/**
- * Get setup status (check if owner account exists)
- * @returns {Promise} Setup status data
- */
-export const getSetupStatus = async () => {
-  try {
-    const response = await API.get('/auth/setup-status');
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Error checking setup status' };
-  }
-};
-
-/**
- * Register owner account
- * @param {Object} ownerData - Name, Shop Name, Username, Email, Phone, Password
- * @returns {Promise} Confirmation details
- */
-export const registerOwner = async (ownerData) => {
-  try {
-    const response = await API.post('/auth/register', ownerData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Error registering owner account' };
-  }
-};
-
-/**
- * Login owner
- * @param {string} username - Username
- * @param {string} password - Password
- * @returns {Promise} JWT token and owner data
- */
-export const login = async (username, password) => {
-  try {
-    const response = await API.post('/auth/login', { username, password });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('owner', JSON.stringify(response.data.owner));
-    }
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Error logging in' };
-  }
-};
-
-/**
- * Logout owner
- */
-export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('owner');
-  localStorage.removeItem('userSettings');
-};
+// ============ OWNER PROFILE ENDPOINTS ============
 
 /**
  * Fetch owner profile
@@ -193,10 +110,12 @@ export const logout = () => {
  */
 export const getProfile = async () => {
   try {
-    const response = await API.get('/auth/profile');
+    const response = await API.get('/profile');
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: 'Error fetching profile' };
+    console.error('getProfile error:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Error fetching profile';
+    throw { message: errorMessage, response: error.response };
   }
 };
 
@@ -207,27 +126,15 @@ export const getProfile = async () => {
  */
 export const updateProfile = async (profileData) => {
   try {
-    const response = await API.put('/auth/profile', profileData);
+    const response = await API.put('/profile', profileData);
     if (response.data.owner) {
       localStorage.setItem('owner', JSON.stringify(response.data.owner));
     }
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: 'Error updating profile' };
-  }
-};
-
-/**
- * Change owner password
- * @param {Object} passwordData - currentPassword, newPassword
- * @returns {Promise} Confirmation details
- */
-export const changePassword = async (passwordData) => {
-  try {
-    const response = await API.put('/auth/profile/password', passwordData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Error changing password' };
+    console.error('updateProfile error:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Error updating profile';
+    throw { message: errorMessage, response: error.response };
   }
 };
 

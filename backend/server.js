@@ -1,14 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 // Import database
 require('./database');
 
 // Import routes
 const productRoutes = require('./routes/products');
-const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
 const salesRoutes = require('./routes/sales');
 
 // Initialize Express app
@@ -19,71 +18,74 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
+// Request Logger
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`${new Date().toISOString()} | ${req.method} ${req.originalUrl}`);
   next();
 });
 
-// Health check endpoint
+// Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Server is running',
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
 });
 
 // API Routes
 app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/sales', salesRoutes);
 
-// Root endpoint
+// Root Route
 app.get('/', (req, res) => {
   res.json({
-    message: 'Shop Items Backend API',
+    success: true,
+    message: 'Venkateshwar Kiranam Shop Management API',
     version: '1.0.0',
     endpoints: {
+      health: '/health',
       products: '/api/products',
-      auth: '/api/auth',
-      health: '/health'
+      profile: '/api/profile',
+      sales: '/api/sales'
     }
   });
 });
 
-// 404 handler
+// 404 Route
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route Not Found'
   });
 });
 
-// Error handling middleware
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error(err.stack);
+
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: 'Internal Server Error',
+    error:
+      process.env.NODE_ENV === 'development'
+        ? err.message
+        : undefined
   });
 });
 
-// Start server
+// Server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║    🛒 Shop Items Backend Server 🛒    ║
-╠════════════════════════════════════════╣
-║  ✓ Server running on port ${PORT}              ║
-║  ✓ Database: shop.db                   ║
-║  ✓ API: http://localhost:${PORT}/api    ║
-║  ✓ Health: http://localhost:${PORT}/health    ║
-╚════════════════════════════════════════╝
-  `);
+  console.log('===========================================');
+  console.log('🛒 Venkateshwar Kiranam Backend Started');
+  console.log(`🚀 Server Running on Port : ${PORT}`);
+  console.log(`🌍 Environment            : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`❤️  Health Check          : /health`);
+  console.log('===========================================');
 });
 
 module.exports = app;

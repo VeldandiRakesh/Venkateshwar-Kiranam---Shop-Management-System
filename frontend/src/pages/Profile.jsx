@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getProfile, updateProfile, changePassword } from '../services/api';
+import { getProfile, updateProfile } from '../services/api';
 import { useProducts } from '../contexts/ProductContext';
 
 const Profile = () => {
@@ -9,7 +9,6 @@ const Profile = () => {
   const [profile, setProfile] = useState({
     full_name: '',
     shop_name: '',
-    username: '',
     email: '',
     phone: '',
     profile_image: null,
@@ -24,15 +23,8 @@ const Profile = () => {
     phone: ''
   });
 
-  const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: ''
-  });
-
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
     fetchOwnerProfile();
@@ -66,13 +58,6 @@ const Profile = () => {
     });
   };
 
-  const handlePasswordChange = (e) => {
-    setPasswords({
-      ...passwords,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const handleSaveProfile = async (e) => {
     e.preventDefault();
 
@@ -99,46 +84,6 @@ const Profile = () => {
       addToast(err.message || 'Failed to update profile', 'error');
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  const handleSavePassword = async (e) => {
-    e.preventDefault();
-
-    if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmNewPassword) {
-      addToast('Please fill in all password fields', 'warning');
-      return;
-    }
-
-    if (passwords.newPassword.length < 6) {
-      addToast('New password must be at least 6 characters long', 'warning');
-      return;
-    }
-
-    if (passwords.newPassword !== passwords.confirmNewPassword) {
-      addToast('Passwords do not match', 'error');
-      return;
-    }
-
-    setSavingPassword(true);
-    try {
-      const response = await changePassword({
-        currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
-      });
-
-      if (response.success) {
-        setPasswords({
-          currentPassword: '',
-          newPassword: '',
-          confirmNewPassword: ''
-        });
-        addToast('Password changed successfully!', 'success');
-      }
-    } catch (err) {
-      addToast(err.message || 'Failed to change password', 'error');
-    } finally {
-      setSavingPassword(false);
     }
   };
 
@@ -208,7 +153,7 @@ const Profile = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Profile Manager</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage owner credentials, shop details, and security</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage owner credentials and shop details</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -315,10 +260,6 @@ const Profile = () => {
                   <p className="font-bold text-gray-900 dark:text-gray-100">{profile.shop_name}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Username</p>
-                  <p className="font-bold text-gray-900 dark:text-gray-100">{profile.username}</p>
-                </div>
-                <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Email Address</p>
                   <p className="font-bold text-gray-900 dark:text-gray-100">{profile.email}</p>
                 </div>
@@ -332,59 +273,6 @@ const Profile = () => {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Change Password Panel */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6">Change Security Password</h2>
-            <form onSubmit={handleSavePassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Current Password</label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwords.currentPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                  placeholder="Enter current password"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">New Password</label>
-                  <input
-                    type="password"
-                    name="newPassword"
-                    value={passwords.newPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                    placeholder="Min 6 characters"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    name="confirmNewPassword"
-                    value={passwords.confirmNewPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                    placeholder="Re-enter password"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <button
-                  type="submit"
-                  disabled={savingPassword}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer disabled:bg-blue-400"
-                >
-                  {savingPassword ? 'Updating...' : 'Update Password'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
 

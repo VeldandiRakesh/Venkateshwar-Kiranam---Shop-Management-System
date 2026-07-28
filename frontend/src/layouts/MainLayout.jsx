@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { getProfile, logout } from '../services/api';
+import { getProfile } from '../services/api';
 
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
   const navigation = [
@@ -23,30 +22,26 @@ const MainLayout = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   const getOwnerInfo = () => {
     const ownerData = localStorage.getItem('owner');
+    const defaultOwner = {
+      full_name: 'Rakesh Veldandi',
+      shop_name: 'Venkateshwar Kiranam',
+      email: 'rakeshveldandi9390@gmail.com',
+      phone: '9876543210',
+      profile_image: null
+    };
     if (ownerData) {
       try {
-        return JSON.parse(ownerData);
+        return { ...defaultOwner, ...JSON.parse(ownerData) };
       } catch (err) {
-        return null;
+        return defaultOwner;
       }
     }
-    return null;
+    return defaultOwner;
   };
 
-  const [owner, setOwner] = useState(getOwnerInfo() || {
-    full_name: 'Shop Owner',
-    shop_name: 'Venkateshwar Kiranam',
-    email: 'owner@shop.com',
-    phone: '',
-    profile_image: null
-  });
+  const [owner, setOwner] = useState(getOwnerInfo());
 
   useEffect(() => {
     const fetchFreshProfile = async () => {
@@ -105,17 +100,6 @@ const MainLayout = () => {
               </Link>
             ))}
           </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <span className="mr-3 text-lg">🚪</span>
-              Logout
-            </button>
-          </div>
         </div>
       </div>
 
@@ -150,50 +134,50 @@ const MainLayout = () => {
                   )}
                 </button>
 
-                {/* Profile Dropdown Menu */}
+                {/* Profile Dropdown Menu / Static Owner Card */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{owner.full_name}</p>
-                      <p className="text-xs text-gray-600 dark:text-slate-400">{owner.shop_name}</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">{owner.email}</p>
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-t-lg">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner Name</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">{owner.full_name}</p>
+                      
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Shop Name</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{owner.shop_name}</p>
+                      
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</p>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">{owner.email}</p>
+                      
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</p>
+                      <p className="text-xs text-gray-700 dark:text-gray-300">{owner.phone || 'Not configured'}</p>
                     </div>
-                    <Link
-                      to="/dashboard/profile"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <span className="mr-2">👤</span>
-                      Profile
-                    </Link>
-                    <Link
-                      to="/dashboard/settings"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <span className="mr-2">⚙️</span>
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setProfileDropdownOpen(false);
-                        toggleTheme();
-                      }}
-                      className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      <span className="mr-2">{theme === 'light' ? '🌙' : '☀️'}</span>
-                      {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setProfileDropdownOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
-                    >
-                      <span className="mr-2">🚪</span>
-                      Logout
-                    </button>
+                    <div className="p-1">
+                      <Link
+                        to="/dashboard/profile"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        <span className="mr-2">👤</span>
+                        Profile
+                      </Link>
+                      <Link
+                        to="/dashboard/settings"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        <span className="mr-2">⚙️</span>
+                        Settings
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          toggleTheme();
+                        }}
+                        className="w-full text-left flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                      >
+                        <span className="mr-2">{theme === 'light' ? '🌙' : '☀️'}</span>
+                        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

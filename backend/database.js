@@ -13,32 +13,14 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 });
 
 function initializeDatabase() {
-  // Create users table if it doesn't exist
-  db.run(
-    `CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`,
-    (err) => {
-      if (err) {
-        console.error('Error creating users table:', err);
-      } else {
-        console.log('✓ Users table ready');
-      }
-    }
-  );
-
   // Create owner table if it doesn't exist
   db.run(
     `CREATE TABLE IF NOT EXISTS owner (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       full_name TEXT NOT NULL,
       shop_name TEXT NOT NULL,
-      username TEXT NOT NULL UNIQUE,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      phone TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       profile_image TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -48,6 +30,8 @@ function initializeDatabase() {
         console.error('Error creating owner table:', err);
       } else {
         console.log('✓ Owner table ready');
+        // Check if we need to add updated_at column
+        addUpdatedAtColumn();
       }
     }
   );
@@ -237,6 +221,79 @@ function insertSampleSales() {
       });
 
       stmt.finalize();
+    }
+  });
+}
+
+// Migration function to add updated_at column
+function addUpdatedAtColumn() {
+  db.all("PRAGMA table_info(owner)", (err, columns) => {
+    if (err) {
+      console.error('Error checking owner table schema:', err);
+      return;
+    }
+
+    const hasUpdatedAt = columns.some(col => col.name === 'updated_at');
+
+    if (!hasUpdatedAt) {
+      console.log('Adding updated_at column to owner table...');
+      db.run('ALTER TABLE owner ADD COLUMN updated_at DATETIME', (err) => {
+        if (err) {
+          console.error('Error adding updated_at column:', err);
+        } else {
+          console.log('✓ updated_at column added successfully');
+          // Update existing rows to set updated_at to created_at
+          db.run('UPDATE owner SET updated_at = created_at WHERE updated_at IS NULL', (err) => {
+            if (err) {
+              console.error('Error updating existing rows:', err);
+            } else {
+              console.log('✓ Existing rows updated with updated_at');
+            }
+            seedDefaultOwner();
+          });
+        }
+      });
+    } else {
+      seedDefaultOwner();
+    }
+  });
+}
+
+// Seed or update owner with default settings
+function seedDefaultOwner() {
+  db.get('SELECT * FROM owner LIMIT 1', (err, row) => {
+    if (err) {
+      console.error('Error checking owner:', err);
+      return;
+    }
+    const defaultOwner = {
+      full_name: 'Rakesh Veldandi',
+      shop_name: 'Venkateshwar Kiranam',
+      email: 'rakeshveldandi9390@gmail.com',
+      phone: row ? row.phone : '9876543210',
+      password_hash: 'no-auth'
+    };
+    if (!row) {
+      db.run(
+        `INSERT INTO owner (full_name, shop_name, email, phone, password_hash)
+         VALUES (?, ?, ?, ?, ?)`,
+        [defaultOwner.full_name, defaultOwner.shop_name, defaultOwner.email, defaultOwner.phone, defaultOwner.password_hash],
+        (err) => {
+          if (err) console.error('Error seeding default owner:', err);
+          else console.log('✓ Seeding default owner');
+        }
+      );
+    } else if (row.full_name !== 'Rakesh Veldandi' || row.email !== 'rakeshveldandi9390@gmail.com') {
+      db.run(
+        `UPDATE owner 
+         SET full_name = ?, shop_name = ?, email = ?
+         WHERE id = ?`,
+        [defaultOwner.full_name, defaultOwner.shop_name, defaultOwner.email, row.id],
+        (err) => {
+          if (err) console.error('Error updating existing owner details:', err);
+          else console.log('✓ Updated existing owner to default Rakesh Veldandi details');
+        }
+      );
     }
   });
 }
